@@ -1,40 +1,45 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const Vessel = sequelize.define('Vessel', {
+const vesselSchema = new mongoose.Schema({
   name: {
-    type: DataTypes.STRING,
-    allowNull: false
+    type: String,
+    required: true
   },
   eta: {
-    type: DataTypes.DATE,
-    allowNull: false
+    type: Date,
+    required: true
   },
   etb: {
-    type: DataTypes.DATE,
-    allowNull: true
+    type: Date
   },
   etd: {
-    type: DataTypes.DATE,
-    allowNull: true
+    type: Date
   },
   services: {
-    type: DataTypes.JSON,
-    allowNull: false,
-    defaultValue: {
+    type: Object,
+    default: {
       freshWater: false,
       provisions: false,
       wasteDisposal: false
     }
   },
   requests: {
-    type: DataTypes.JSON,
-    allowNull: true
+    type: Object,
+    default: {
+      pilotage: false,
+      towage: false,
+      linesmen: false
+    }
   },
-  createdBy: {
-    type: DataTypes.INTEGER,
-    allowNull: false
+  status: {
+    type: String,
+    enum: ['pending', 'in-progress', 'completed'],
+    default: 'pending'
   }
+}, {
+  timestamps: true
 });
+
+const Vessel = mongoose.model('Vessel', vesselSchema);
 
 module.exports = Vessel;
