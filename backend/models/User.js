@@ -1,49 +1,51 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const config = require('../config/default.json');
 
-const User = sequelize.define('User', {
+const userSchema = new mongoose.Schema({
   email: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
     unique: true,
-    validate: {
-      isEmail: true
-    }
+    trim: true,
+    lowercase: true,
+    match: [/.+\@.+\..+/, 'Please fill a valid email address']
   },
   password: {
-    type: DataTypes.STRING,
-    allowNull: false
+    type: String,
+    required: true
   },
   role: {
-    type: DataTypes.STRING,
-    defaultValue: 'user'
-  },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
+    type: String,
+    default: 'user'
   }
 }, {
-  hooks: {
-    beforeCreate: async (user) => {
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(user.password, salt);
-    }
-  }
+  timestamps: true
 });
 
-User.prototype.comparePassword = async function(password) {
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// Compare password method
+userSchema.methods.comparePassword = async function(password) {
   return await bcrypt.compare(password, this.password);
 };
 
-User.prototype.generateAuthToken = function() {
+// Generate JWT token
+userSchema.methods.generateAuthToken = function() {
   return jwt.sign(
-    { id: this.id, email: this.email, role: this.role },
-    config.jwtSecret,
+    { id: this._id, email: this.email, role: this.role },
+    process.env.JWT_SECRET,
     { expiresIn: '24h' }
   );
 };
+
+const User = mongoose.model('User', userSchema);
 
 module.exports = User;
