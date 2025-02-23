@@ -1,0 +1,4 @@
+{
+  "mongoURI": "mongodb+srv://shipagency:shipagency123@cluster0.mongodb.net/shipagency?retryWrites=true&w=majority",
+  "jwtSecret": "your_jwt_secret"
+}

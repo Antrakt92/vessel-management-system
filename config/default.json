@@ -1,0 +1,16 @@
+{
+  "mongoURI": "mongodb://localhost:27017/shipagency",
+  "jwtSecret": "your_jwt_secret_here",
+  "email": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "secure": false,
+    "auth": {
+      "user": "your.email@gmail.com",
+      "pass": "your_app_specific_password"
+    },
+    "tls": {
+      "rejectUnauthorized": false
+    }
+  }
+}
