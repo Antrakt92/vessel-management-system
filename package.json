@@ -1,5 +1,5 @@
 {
-  "name": "ship-agency-root",
+  "name": "vessel-management-system",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
@@ -7,12 +7,11 @@
     "backend"
   ],
   "scripts": {
-    "start": "npm run start --workspace=frontend",
-    "server": "npm run start --workspace=backend",
-    "build": "npm run build --workspace=frontend"
+    "start": "node backend/server.js",
+    "build": "cd frontend && npm install && npm run build",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm start\""
   },
   "dependencies": {
-    "axios": "1.7.9",
-    "react-scripts": "^3.0.1"
+    "concurrently": "^8.0.1"
   }
 }
