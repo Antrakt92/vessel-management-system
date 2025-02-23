@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Box, Typography, Container, Paper } from '@mui/material';
 import axios from '../utils/axiosConfig';
 import { useNavigate } from 'react-router-dom';
@@ -12,19 +12,20 @@ const VesselDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchVessels = async () => {
+  const fetchVessels = useCallback(async () => {
     try {
       const res = await axios.get('/api/vessels');
       const vesselsData = res.data || [];
-      console.log('Raw vessels data:', vesselsData);
       
-      // Ensure each vessel has an id field
+      // Ensure each vessel has an id field and valid dates
       const processedVessels = vesselsData.map(vessel => ({
         ...vessel,
-        id: vessel.id // Use the id field directly
+        id: vessel._id || vessel.id, // Handle both MongoDB _id and regular id
+        eta: vessel.eta ? new Date(vessel.eta) : null,
+        etb: vessel.etb ? new Date(vessel.etb) : null,
+        etd: vessel.etd ? new Date(vessel.etd) : null
       }));
       
-      console.log('Processed vessels:', processedVessels);
       setVessels(processedVessels);
       setError('');
     } catch (err) {
@@ -38,21 +39,20 @@ const VesselDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
 
   useEffect(() => {
     fetchVessels();
-  }, [navigate]);
+  }, [fetchVessels]);
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     navigate('/');
   };
 
-  const handleVesselAdded = (newVessel) => {
-    if (newVessel) {
-      setVessels(prevVessels => [newVessel, ...prevVessels]);
-    }
+  const handleVesselAdded = () => {
+    setOpenForm(false);
+    fetchVessels();
   };
 
   return (

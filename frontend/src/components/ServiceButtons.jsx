@@ -1,63 +1,59 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button, Box, CircularProgress } from '@mui/material';
-import { format } from 'date-fns';
+import { WaterDrop, Restaurant, Delete } from '@mui/icons-material';
 
-const ServiceButtons = ({ vessel }) => {
-  const [loading, setLoading] = useState(false);
+const SERVICE_CONFIG = {
+  freshWater: {
+    label: 'Fresh Water',
+    icon: WaterDrop,
+    emailType: 'Fresh Water Supply'
+  },
+  provisions: {
+    label: 'Provisions',
+    icon: Restaurant,
+    emailType: 'Provisions Supply'
+  },
+  wasteDisposal: {
+    label: 'Waste',
+    icon: Delete,
+    emailType: 'Waste Disposal'
+  }
+};
 
+const ServiceButtons = ({ services = {}, disabled = false }) => {
   const handleServiceRequest = (type) => {
-    if (!vessel) return;
-
-    setLoading(true);
-    const subject = `Service Request for ${vessel.name}`;
+    const subject = `Service Request: ${type}`;
     const body = `Service request details:
+Type: ${type}
 
-Vessel: ${vessel.name}
-Service Type: ${type}
-ETA: ${vessel.eta ? format(new Date(vessel.eta), 'dd-MMM-yyyy HH:mm') : 'N/A'}
-ETB: ${vessel.etb ? format(new Date(vessel.etb), 'dd-MMM-yyyy HH:mm') : 'N/A'}
-ETD: ${vessel.etd ? format(new Date(vessel.etd), 'dd-MMM-yyyy HH:mm') : 'N/A'}`;
+Please process this service request.
+
+Best regards`;
 
     const mailtoLink = `mailto:service@shipagency.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(mailtoLink, '_blank');
-    
-    // Reset loading state after a short delay
-    setTimeout(() => {
-      setLoading(false);
-    }, 2000);
   };
 
   return (
-    <Box>
-      <Button
-        variant="outlined"
-        size="small"
-        onClick={() => handleServiceRequest('Fresh Water')}
-        disabled={!vessel || loading}
-        sx={{ mr: 1 }}
-        startIcon={loading ? <CircularProgress size={16} /> : null}
-      >
-        Fresh Water
-      </Button>
-      <Button
-        variant="outlined"
-        size="small"
-        onClick={() => handleServiceRequest('Provisions')}
-        disabled={!vessel || loading}
-        sx={{ mr: 1 }}
-        startIcon={loading ? <CircularProgress size={16} /> : null}
-      >
-        Provisions
-      </Button>
-      <Button
-        variant="outlined"
-        size="small"
-        onClick={() => handleServiceRequest('Waste Disposal')}
-        disabled={!vessel || loading}
-        startIcon={loading ? <CircularProgress size={16} /> : null}
-      >
-        Waste Disposal
-      </Button>
+    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+      {Object.entries(services).map(([key, isActive]) => {
+        if (!isActive || !SERVICE_CONFIG[key]) return null;
+        
+        const { label, icon: Icon, emailType } = SERVICE_CONFIG[key];
+        
+        return (
+          <Button
+            key={key}
+            variant="outlined"
+            size="small"
+            onClick={() => handleServiceRequest(emailType)}
+            disabled={disabled}
+            startIcon={disabled ? <CircularProgress size={16} /> : <Icon />}
+          >
+            {label}
+          </Button>
+        );
+      })}
     </Box>
   );
 };

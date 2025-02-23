@@ -4,6 +4,12 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import axios from '../utils/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 
+const DEFAULT_SERVICES = {
+  freshWater: false,
+  provisions: false,
+  wasteDisposal: false
+};
+
 const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -11,12 +17,11 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
     eta: new Date(),
     etb: null,
     etd: null,
-    services: {
-      freshWater: false,
-      provisions: false,
-      wasteDisposal: false
-    }
+    services: { ...DEFAULT_SERVICES }
   });
+
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (initialValues) {
@@ -26,85 +31,115 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
         etb: initialValues.etb ? new Date(initialValues.etb) : null,
         etd: initialValues.etd ? new Date(initialValues.etd) : null,
         services: {
-          freshWater: initialValues.services?.freshWater || false,
-          provisions: initialValues.services?.provisions || false,
-          wasteDisposal: initialValues.services?.wasteDisposal || false
+          ...DEFAULT_SERVICES,
+          ...(initialValues.services || {})
         }
       });
     }
   }, [initialValues]);
 
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      setError('Vessel name is required');
-      return;
-    }
-
-    if (!formData.eta || !(formData.eta instanceof Date) || isNaN(formData.eta)) {
-      setError('Valid ETA date is required');
-      return;
-    }
-
+  const validateDates = () => {
     try {
-      setLoading(true);
-      setError(null);
+      const now = new Date();
+      const eta = formData.eta;
+      const etb = formData.etb;
+      const etd = formData.etd;
 
-      const payload = {
-        ...formData,
-        eta: formData.eta.toISOString(),
-        etb: formData.etb ? formData.etb.toISOString() : null,
-        etd: formData.etd ? formData.etd.toISOString() : null
-      };
+      if (!eta || !(eta instanceof Date) || isNaN(eta)) {
+        return 'Valid ETA date is required';
+      }
 
-      let response;
-      if (initialValues?.id) {
-        response = await axios.put(`/api/vessels/${initialValues.id}`, payload);
-        if (onVesselAdded) {
-          onVesselAdded(response.data);
+      if (eta < now) {
+        return 'ETA cannot be in the past';
+      }
+
+      if (etb) {
+        if (!(etb instanceof Date) || isNaN(etb)) {
+          return 'Invalid ETB date format';
         }
-      } else {
-        response = await axios.post('/api/vessels', payload);
-        if (onVesselAdded && response.data) {
-          onVesselAdded(response.data);
+        if (etb < eta) {
+          return 'ETB must be after ETA';
         }
       }
 
+      if (etd) {
+        if (!(etd instanceof Date) || isNaN(etd)) {
+          return 'Invalid ETD date format';
+        }
+        if (etb && etd < etb) {
+          return 'ETD must be after ETB';
+        }
+        if (!etb && etd < eta) {
+          return 'ETD must be after ETA';
+        }
+      }
+
+      return null;
+    } catch (err) {
+      console.error('Date validation error:', err);
+      return 'Error validating dates';
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      if (!formData.name.trim()) {
+        setError('Vessel name is required');
+        return;
+      }
+
+      const dateError = validateDates();
+      if (dateError) {
+        setError(dateError);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      const response = await axios({
+        method: initialValues ? 'put' : 'post',
+        url: initialValues ? `/api/vessels/${initialValues.id}` : '/api/vessels',
+        data: {
+          ...formData,
+          eta: formData.eta.toISOString(),
+          etb: formData.etb?.toISOString() || null,
+          etd: formData.etd?.toISOString() || null
+        },
+        timeout: 10000 // 10 second timeout
+      });
+
+      onVesselAdded(response.data);
       onClose();
     } catch (err) {
-      console.error('Error saving vessel:', err.response || err);
-      setError(err.response?.data?.message || 'Error saving vessel');
-      if (err.response?.status === 401) {
+      console.error('Error saving vessel:', err);
+      if (err.code === 'ECONNABORTED') {
+        setError('Request timed out. Please try again.');
+      } else if (err.response?.status === 401) {
         localStorage.removeItem('authToken');
         navigate('/');
+      } else if (!navigator.onLine) {
+        setError('No internet connection. Please check your network.');
+      } else {
+        setError(err.response?.data?.message || 'Failed to save vessel. Please try again.');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClose = () => {
-    setError(null);
-    setFormData({
-      name: '',
-      eta: new Date(),
-      etb: null,
-      etd: null,
+  const handleServiceChange = (service) => {
+    setFormData(prev => ({
+      ...prev,
       services: {
-        freshWater: false,
-        provisions: false,
-        wasteDisposal: false
+        ...prev.services,
+        [service]: !prev.services[service]
       }
-    });
-    if (onClose) {
-      onClose();
-    }
+    }));
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{initialValues ? 'Edit Vessel' : 'Add New Vessel'}</DialogTitle>
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 2 }}>
@@ -113,56 +148,68 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
           <TextField
             label="Vessel Name"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             required
             fullWidth
+            error={error && !formData.name.trim()}
+            disabled={loading}
           />
 
           <DateTimePicker
             label="ETA"
             value={formData.eta}
-            onChange={(newValue) => setFormData({ ...formData, eta: newValue })}
+            onChange={(date) => setFormData(prev => ({ ...prev, eta: date }))}
             slotProps={{ 
-              textField: { fullWidth: true, required: true },
+              textField: { 
+                fullWidth: true, 
+                required: true,
+                error: error && validateDates() === 'Valid ETA date is required'
+              },
               toolbar: { hidden: true }
             }}
             ampm={false}
             format="dd-MMM-yyyy HH:mm"
+            disabled={loading}
           />
 
           <DateTimePicker
             label="ETB"
             value={formData.etb}
-            onChange={(newValue) => setFormData({ ...formData, etb: newValue })}
+            onChange={(date) => setFormData(prev => ({ ...prev, etb: date }))}
             slotProps={{ 
-              textField: { fullWidth: true },
+              textField: { 
+                fullWidth: true,
+                error: error && validateDates()?.includes('ETB')
+              },
               toolbar: { hidden: true }
             }}
             ampm={false}
             format="dd-MMM-yyyy HH:mm"
+            disabled={loading}
           />
 
           <DateTimePicker
             label="ETD"
             value={formData.etd}
-            onChange={(newValue) => setFormData({ ...formData, etd: newValue })}
+            onChange={(date) => setFormData(prev => ({ ...prev, etd: date }))}
             slotProps={{ 
-              textField: { fullWidth: true },
+              textField: { 
+                fullWidth: true,
+                error: error && validateDates()?.includes('ETD')
+              },
               toolbar: { hidden: true }
             }}
             ampm={false}
             format="dd-MMM-yyyy HH:mm"
+            disabled={loading}
           />
 
-          <Stack>
+          <Stack spacing={1}>
             <FormControlLabel
               control={
                 <Checkbox
                   checked={formData.services.freshWater}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    services: { ...formData.services, freshWater: e.target.checked }
-                  })}
+                  onChange={() => handleServiceChange('freshWater')}
                 />
               }
               label="Fresh Water"
@@ -171,10 +218,7 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
               control={
                 <Checkbox
                   checked={formData.services.provisions}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    services: { ...formData.services, provisions: e.target.checked }
-                  })}
+                  onChange={() => handleServiceChange('provisions')}
                 />
               }
               label="Provisions"
@@ -183,10 +227,7 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
               control={
                 <Checkbox
                   checked={formData.services.wasteDisposal}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    services: { ...formData.services, wasteDisposal: e.target.checked }
-                  })}
+                  onChange={() => handleServiceChange('wasteDisposal')}
                 />
               }
               label="Waste Disposal"
@@ -194,11 +235,17 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
           </Stack>
 
           <Stack direction="row" spacing={2} justifyContent="flex-end">
-            <Button onClick={handleClose} color="primary">
+            <Button onClick={onClose} color="primary" disabled={loading}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} variant="contained" color="primary" disabled={loading}>
-              {loading ? 'Saving...' : (initialValues ? 'Save Changes' : 'Add Vessel')}
+            <Button 
+              onClick={handleSubmit} 
+              variant="contained" 
+              fullWidth 
+              disabled={loading}
+              sx={{ mt: 2 }}
+            >
+              {loading ? 'Saving...' : (initialValues ? 'Update Vessel' : 'Add Vessel')}
             </Button>
           </Stack>
         </Stack>
