@@ -77,4 +77,23 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// Delete all users except one
+router.delete('/users/cleanup', authMiddleware, async (req, res) => {
+  try {
+    const { keepEmail } = req.body;
+    
+    if (!keepEmail) {
+      return res.status(400).json({ message: 'keepEmail is required' });
+    }
+
+    // Delete all users except the one with keepEmail
+    const result = await User.deleteMany({ email: { $ne: keepEmail } });
+    
+    res.json({ message: `Deleted ${result.deletedCount} users` });
+  } catch (err) {
+    console.error('Error deleting users:', err);
+    res.status(500).json({ message: 'Server error during user deletion' });
+  }
+});
+
 module.exports = router;
