@@ -12,6 +12,9 @@
     "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm start\""
   },
   "dependencies": {
-    "concurrently": "^8.0.1"
+    "bcryptjs": "^3.0.2",
+    "concurrently": "^8.0.1",
+    "dotenv": "^16.4.7",
+    "mongoose": "^8.10.2"
   }
 }

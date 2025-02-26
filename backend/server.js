@@ -52,7 +52,40 @@ require('./config/passport')(passport);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB Connected'))
+  .then(() => {
+    console.log('MongoDB Connected');
+    
+    // Create admin user after successful connection
+    const User = require('./models/User');
+    
+    (async () => {
+      try {
+        // Check for admin@shipagency.com
+        const shipAdminExists = await User.findOne({ email: 'admin@shipagency.com' });
+        if (!shipAdminExists) {
+          await User.create({
+            email: 'admin@shipagency.com',
+            password: 'admin123',
+            role: 'admin'
+          });
+          console.log('Ship Agency admin user created successfully');
+        }
+        
+        // Check for admin@vessel.com
+        const vesselAdminExists = await User.findOne({ email: 'admin@vessel.com' });
+        if (!vesselAdminExists) {
+          await User.create({
+            email: 'admin@vessel.com',
+            password: 'admin123',
+            role: 'admin'
+          });
+          console.log('Vessel admin user created successfully');
+        }
+      } catch (error) {
+        console.error('Error creating admin users:', error);
+      }
+    })();
+  })
   .catch(err => console.log('MongoDB Connection Error:', err));
 
 // Routes

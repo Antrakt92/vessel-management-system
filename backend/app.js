@@ -1,3 +1,9 @@
+/**
+ * NOTE: This file is not currently being used in the application.
+ * The admin user creation code from this file has been moved to server.js.
+ * This file is kept for reference purposes only.
+ */
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
