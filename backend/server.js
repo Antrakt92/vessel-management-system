@@ -2,8 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const passport = require('passport');
-const mongoose = require('mongoose');
 const morgan = require('morgan');
+const connectDB = require('./config/database');
+const User = require('./models/User');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -37,67 +38,71 @@ const corsOptions = {
   credentials: true
 };
 
+// Middleware
 app.use(cors(corsOptions));
-
-// Logger
 app.use(morgan('dev'));
-
-// Parse JSON bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Initialize Passport
 app.use(passport.initialize());
+
+// Passport Configuration
 require('./config/passport')(passport);
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('MongoDB Connected');
-    
-    // Create admin user after successful connection
-    const User = require('./models/User');
-    
-    (async () => {
-      try {
-        // Check for admin@shipagency.com
-        const shipAdminExists = await User.findOne({ email: 'admin@shipagency.com' });
-        if (!shipAdminExists) {
-          await User.create({
-            email: 'admin@shipagency.com',
-            password: 'admin123',
-            role: 'admin'
-          });
-          console.log('Ship Agency admin user created successfully');
-        }
-        
-        // Check for admin@vessel.com
-        const vesselAdminExists = await User.findOne({ email: 'admin@vessel.com' });
-        if (!vesselAdminExists) {
-          await User.create({
-            email: 'admin@vessel.com',
-            password: 'admin123',
-            role: 'admin'
-          });
-          console.log('Vessel admin user created successfully');
-        }
-      } catch (error) {
-        console.error('Error creating admin users:', error);
+connectDB()
+  .then(async () => {
+    // Create admin users after successful connection
+    try {
+      // Check for admin@shipagency.com
+      const shipAdminExists = await User.findOne({ email: 'admin@shipagency.com' });
+      if (!shipAdminExists) {
+        await User.create({
+          email: 'admin@shipagency.com',
+          password: 'admin123',
+          role: 'admin'
+        });
+        console.log('Ship Agency admin user created successfully');
       }
-    })();
+      
+      // Check for admin@vessel.com
+      const vesselAdminExists = await User.findOne({ email: 'admin@vessel.com' });
+      if (!vesselAdminExists) {
+        await User.create({
+          email: 'admin@vessel.com',
+          password: 'admin123',
+          role: 'admin'
+        });
+        console.log('Vessel admin user created successfully');
+      }
+    } catch (error) {
+      console.error('Error creating admin users:', error);
+    }
   })
   .catch(err => console.log('MongoDB Connection Error:', err));
 
 // Routes
 app.use('/api/vessels', require('./routes/vessels'));
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/email', require('./routes/email'));
+app.use('/api/email', require('./routes/emailRoutes'));
+app.use('/api/health', require('./routes/health'));
 
+// Root route
 app.get('/', (req, res) => {
   res.json({ message: 'Vessel Management System API' });
 });
 
+// Error handling middleware
+const errorHandler = require('./middleware/errorHandler');
+app.use(errorHandler);
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.log('Unhandled Rejection:', err);
+});
+
+module.exports = app; // Export for testing

@@ -1,0 +1,10 @@
+Please update your .env file with the following content:
+
+# API Configuration
+REACT_APP_API_URL=http://localhost:5000
+
+# Environment
+NODE_ENV=development
+
+# Application Settings
+REACT_APP_TITLE=Vessel Management System

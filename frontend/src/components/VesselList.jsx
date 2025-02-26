@@ -16,7 +16,8 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
-  Divider
+  Divider,
+  Tooltip
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
@@ -102,6 +103,9 @@ const VesselList = ({ vessels, onVesselUpdated, loading: parentLoading = false }
               <TableCell>ETA</TableCell>
               <TableCell>ETB</TableCell>
               <TableCell>ETD</TableCell>
+              <TableCell>Berth</TableCell>
+              <TableCell>Cargo</TableCell>
+              <TableCell>Fresh Water</TableCell>
               <TableCell>Vessel Services</TableCell>
               <TableCell>Port Services</TableCell>
               <TableCell>Actions</TableCell>
@@ -114,16 +118,21 @@ const VesselList = ({ vessels, onVesselUpdated, loading: parentLoading = false }
                 <TableCell>{formatDate(vessel.eta)}</TableCell>
                 <TableCell>{formatDate(vessel.etb)}</TableCell>
                 <TableCell>{formatDate(vessel.etd)}</TableCell>
+                <TableCell>{vessel.berth || '-'}</TableCell>
+                <TableCell>{vessel.cargo || '-'}</TableCell>
+                <TableCell>{vessel.freshWaterQuantity ? `${vessel.freshWaterQuantity} m³` : '-'}</TableCell>
                 <TableCell>
                   <ServiceButtons 
                     services={vessel.services} 
                     disabled={isDisabled}
+                    vessel={vessel}
                   />
                 </TableCell>
                 <TableCell>
                   <RequestButtons 
                     requests={vessel.requests} 
                     disabled={isDisabled}
+                    vessel={vessel}
                   />
                 </TableCell>
                 <TableCell>

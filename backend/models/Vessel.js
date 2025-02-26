@@ -15,6 +15,16 @@ const vesselSchema = new mongoose.Schema({
   etd: {
     type: Date
   },
+  berth: {
+    type: String
+  },
+  cargo: {
+    type: String
+  },
+  freshWaterQuantity: {
+    type: Number,
+    min: 0
+  },
   services: {
     type: Object,
     default: {

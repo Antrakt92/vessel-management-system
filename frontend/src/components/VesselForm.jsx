@@ -24,6 +24,9 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
     eta: null,
     etb: null,
     etd: null,
+    berth: '',
+    cargo: '',
+    freshWaterQuantity: '',
     services: { ...DEFAULT_SERVICES },
     requests: { ...DEFAULT_REQUESTS }
   });
@@ -40,6 +43,9 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
         eta: initialValues.eta ? new Date(initialValues.eta) : null,
         etb: initialValues.etb ? new Date(initialValues.etb) : null,
         etd: initialValues.etd ? new Date(initialValues.etd) : null,
+        berth: initialValues.berth || '',
+        cargo: initialValues.cargo || '',
+        freshWaterQuantity: initialValues.freshWaterQuantity || '',
         services: {
           ...DEFAULT_SERVICES,
           ...(initialValues.services || {})
@@ -55,6 +61,9 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
         eta: null,
         etb: null,
         etd: null,
+        berth: '',
+        cargo: '',
+        freshWaterQuantity: '',
         services: { ...DEFAULT_SERVICES },
         requests: { ...DEFAULT_REQUESTS }
       });
@@ -135,6 +144,9 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
           eta: null,
           etb: null,
           etd: null,
+          berth: '',
+          cargo: '',
+          freshWaterQuantity: '',
           services: { ...DEFAULT_SERVICES },
           requests: { ...DEFAULT_REQUESTS }
         });
@@ -179,6 +191,9 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
         eta: null,
         etb: null,
         etd: null,
+        berth: '',
+        cargo: '',
+        freshWaterQuantity: '',
         services: { ...DEFAULT_SERVICES },
         requests: { ...DEFAULT_REQUESTS }
       });
@@ -254,6 +269,49 @@ const VesselForm = ({ open = false, onClose, onVesselAdded, initialValues = null
             }}
             ampm={false}
             format="dd-MMM-yyyy HH:mm"
+          />
+
+          <TextField
+            label="Berth"
+            fullWidth
+            value={formData.berth}
+            onChange={(e) => handleInputChange('berth', e.target.value)}
+            placeholder="Enter berth"
+            InputProps={{
+              startAdornment: <span style={{ marginRight: 8 }}>🚢</span>,
+            }}
+            disabled={loading}
+          />
+
+          <TextField
+            label="Cargo"
+            fullWidth
+            value={formData.cargo}
+            onChange={(e) => handleInputChange('cargo', e.target.value)}
+            placeholder="Enter cargo"
+            InputProps={{
+              startAdornment: <span style={{ marginRight: 8 }}>📦</span>,
+            }}
+            disabled={loading}
+          />
+
+          <TextField
+            label="Fresh Water Quantity"
+            fullWidth
+            type="number"
+            value={formData.freshWaterQuantity}
+            onChange={(e) => {
+              const value = e.target.value === '' ? '' : Number(e.target.value);
+              if (value === '' || value >= 0) {
+                handleInputChange('freshWaterQuantity', value);
+              }
+            }}
+            placeholder="Enter fresh water quantity (m³)"
+            InputProps={{
+              startAdornment: <span style={{ marginRight: 8 }}>💧</span>,
+              endAdornment: <span style={{ marginLeft: 8 }}>m³</span>,
+            }}
+            disabled={loading}
           />
 
           <Stack spacing={1}>
