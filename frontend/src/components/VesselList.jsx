@@ -15,12 +15,14 @@ import {
   Button,
   Snackbar,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Divider
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
 import VesselForm from './VesselForm';
 import ServiceButtons from './ServiceButtons';
+import RequestButtons from './RequestButtons';
 import axios from '../utils/axiosConfig';
 
 const formatDate = (date) => {
@@ -100,7 +102,8 @@ const VesselList = ({ vessels, onVesselUpdated, loading: parentLoading = false }
               <TableCell>ETA</TableCell>
               <TableCell>ETB</TableCell>
               <TableCell>ETD</TableCell>
-              <TableCell>Services</TableCell>
+              <TableCell>Vessel Services</TableCell>
+              <TableCell>Port Services</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -114,6 +117,12 @@ const VesselList = ({ vessels, onVesselUpdated, loading: parentLoading = false }
                 <TableCell>
                   <ServiceButtons 
                     services={vessel.services} 
+                    disabled={isDisabled}
+                  />
+                </TableCell>
+                <TableCell>
+                  <RequestButtons 
+                    requests={vessel.requests} 
                     disabled={isDisabled}
                   />
                 </TableCell>

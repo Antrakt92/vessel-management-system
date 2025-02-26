@@ -1,22 +1,25 @@
 import React from 'react';
-import { Button, Box, CircularProgress } from '@mui/material';
+import { Button, Box, CircularProgress, Tooltip } from '@mui/material';
 import { WaterDrop, Restaurant, Delete } from '@mui/icons-material';
 
 const SERVICE_CONFIG = {
   freshWater: {
     label: 'Fresh Water',
     icon: WaterDrop,
-    emailType: 'Fresh Water Supply'
+    emailType: 'Fresh Water Supply',
+    tooltip: 'Request fresh water supply for the vessel'
   },
   provisions: {
     label: 'Provisions',
     icon: Restaurant,
-    emailType: 'Provisions Supply'
+    emailType: 'Provisions Supply',
+    tooltip: 'Request provisions supply for the vessel'
   },
   wasteDisposal: {
     label: 'Waste',
     icon: Delete,
-    emailType: 'Waste Disposal'
+    emailType: 'Waste Disposal',
+    tooltip: 'Request waste disposal service for the vessel'
   }
 };
 
@@ -39,19 +42,29 @@ Best regards`;
       {Object.entries(services).map(([key, isActive]) => {
         if (!isActive || !SERVICE_CONFIG[key]) return null;
         
-        const { label, icon: Icon, emailType } = SERVICE_CONFIG[key];
+        const { label, icon: Icon, emailType, tooltip } = SERVICE_CONFIG[key];
         
         return (
-          <Button
-            key={key}
-            variant="outlined"
-            size="small"
-            onClick={() => handleServiceRequest(emailType)}
-            disabled={disabled}
-            startIcon={disabled ? <CircularProgress size={16} /> : <Icon />}
-          >
-            {label}
-          </Button>
+          <Tooltip key={key} title={tooltip} arrow>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleServiceRequest(emailType)}
+              disabled={disabled}
+              startIcon={disabled ? <CircularProgress size={16} /> : <Icon />}
+              color="primary"
+              sx={{ 
+                borderRadius: '20px',
+                '&:hover': {
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                  transform: 'translateY(-2px)'
+                },
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {label}
+            </Button>
+          </Tooltip>
         );
       })}
     </Box>
